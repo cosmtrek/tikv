@@ -173,7 +173,7 @@ fn main() {
                             let size = get_region_size(&db, region_id);
                         }
                     }
-                },
+                }
             }
         } else {
             panic!("Currently only support raft log entry and scan.")
@@ -394,14 +394,18 @@ fn get_all_region_id(db: &DB, skip_tombstone: bool) -> Vec<u64> {
     let start_key = keys::REGION_META_MIN_KEY;
     let end_key = keys::REGION_META_MAX_KEY;
     let mut region_ids: Vec<u64> = Vec::new();
-    db.scan(start_key, end_key, false, &mut |key, _| {
-        let (region_id, suffix) = try!(keys::decode_region_meta_key(key));
-        if suffix != keys::REGION_STATE_SUFFIX {
-            return Ok(true);
-        }
-        region_ids.push(region_id);
-        Ok(true)
-    }).unwrap();
+    db.scan(start_key,
+              end_key,
+              false,
+              &mut |key, _| {
+            let (region_id, suffix) = try!(keys::decode_region_meta_key(key));
+            if suffix != keys::REGION_STATE_SUFFIX {
+                return Ok(true);
+            }
+            region_ids.push(region_id);
+            Ok(true)
+        })
+        .unwrap();
     region_ids
 }
 
@@ -414,10 +418,15 @@ fn get_region_size(db: &DB, region_id: u64) -> u64 {
     let mut size: u64 = 0;
     let cf_arr = [CF_DEFAULT, CF_WRITE, CF_LOCK];
     for cf in cf_arr.iter() {
-        db.scan_cf(cf, &start_key, &end_key, true, &mut |_, v| {
-            size += v.len() as u64;
-            Ok(true)
-        }).unwrap();
+        db.scan_cf(cf,
+                     &start_key,
+                     &end_key,
+                     true,
+                     &mut |_, v| {
+                         size += v.len() as u64;
+                         Ok(true)
+                     })
+            .unwrap();
     }
     size
 }
